@@ -5,17 +5,22 @@ from scipy.signal import find_peaks
 from scipy.stats import linregress
 
 mass = 22.06
-amplitudes = ['chico', 'mediano', 'grande']  
-lengths = ['L3', 'L4', 'L5']
-length_values = {'L3': 0.27, 'L4': 0.205, 'L5': 0.115}
+amplitudes = ['mediano', 'grande']  
+lengths = ['L1', 'L2', 'L3', 'L4', 'L5']
+length_values = {'L1': 0.305, 'L2': 0.215, 'L3': 0.27, 'L4': 0.205, 'L5': 0.115}
 
 def load_data(amplitude, length):
     """Reads and cleans the data from the file for the given amplitude and length."""
-    file = f'exp2_{length}_{amplitude}.txt'
+    if length in ['L1', 'L2']:
+        file = f'exp1_plat_{length}_{amplitude}.txt'
+    else:
+        file = f'exp2_{length}_{amplitude}.txt'
+    
     data = pd.read_csv(file, sep='\s+', skiprows=1, names=['t', 'x', 'y', 'θ', 'ω'])
     data_clean = data.dropna(subset=['θ'])
     data_clean['t'] = pd.to_numeric(data_clean['t'], errors='coerce')
     data_clean['θ'] = pd.to_numeric(data_clean['θ'], errors='coerce')
+    
     return data_clean
 
 def calculate_period(data):
