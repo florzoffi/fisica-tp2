@@ -2,11 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from scipy.signal import find_peaks
+from io import StringIO
 
 mass = 22.06
 amplitudes = ['chico', 'mediano', 'grande']  
-lengths = ['L3', 'L4', 'L5']
-length_values = {'L3': 0.27, 'L4': 0.205, 'L5': 0.115}
+lengths = ['L1', 'L2', 'L3', 'L4', 'L5']
+length_values = {'L1': 0.305, 'L2': 0.215, 'L3': 0.27, 'L4': 0.205, 'L5': 0.115}
 
 def load_data(amplitude, length):
     """Lee y limpia los datos del archivo para la combinación de amplitud y longitud."""
@@ -19,6 +20,26 @@ def load_data(amplitude, length):
     data_clean['θ'] = pd.to_numeric(data_clean['θ'], errors='coerce')
     data_clean['ω'] = pd.to_numeric(data_clean['ω'], errors='coerce')
     data_clean['θ'] = abs(data_clean['θ']) - 90
+    
+    return data_clean
+
+def load_data_L1_L2(amplitude, length):
+    """Lee y limpia los datos del archivo para la combinación de masa, amplitud y longitud."""
+    file = f'exp1_plat_{length}_{amplitude}.txt'
+    
+    with open(file, 'r') as f:
+        file_data = f.read().replace(',', '.')
+    
+    data = pd.read_csv(StringIO(file_data), sep='\s+', skiprows=1, names=['t', 'x', 'y', 'θ', 'ω'])
+
+    data['t'] = pd.to_numeric(data['t'], errors='coerce')
+    data['x'] = pd.to_numeric(data['x'], errors='coerce')
+    data['y'] = pd.to_numeric(data['y'], errors='coerce')
+    data['θ'] = pd.to_numeric(data['θ'], errors='coerce')
+    
+    data['θ'] = abs(data['θ']) - 90  
+    
+    data_clean = data.dropna(subset=['θ'])
     
     return data_clean
 
@@ -41,17 +62,27 @@ def calcular_frecuencia(data):
     else:
         return None
 
+def load_data_for_graficar(amplitude, length):
+    """Selecciona la función correcta para cargar los datos según la longitud."""
+    if length in ['L1', 'L2']:
+        return load_data_L1_L2(amplitude, length)
+    else:
+        return load_data(amplitude, length)
+
 def graficar_frecuencia_vs_longitud_calculada():
     """Grafica la frecuencia vs longitud con una masa fija y diferentes amplitudes en una sola figura."""
     fig, axs = plt.subplots(1, 3, figsize=(18, 6))
+    
+    all_lengths = ['L1', 'L3', 'L2', 'L4', 'L5']
+    
     for i, amplitude in enumerate(amplitudes):
         frecuencias = []
-        for length in lengths:
-            data = load_data(amplitude, length)
+        for length in all_lengths:
+            data = load_data_for_graficar(amplitude, length)
             frecuencia_angular = calcular_frecuencia(data)
             frecuencias.append(frecuencia_angular)
 
-        axs[i].plot([length_values[l] for l in lengths], frecuencias, marker='o', linestyle='-', color='b')
+        axs[i].plot([length_values[l] for l in all_lengths], frecuencias, marker='o', color='b')
         axs[i].set_title(f'Amplitud {amplitude}')
         axs[i].set_xlabel('Longitud (m)')
         axs[i].set_ylabel('Frecuencia ω (rad/s)')
@@ -66,7 +97,7 @@ def graficar_frecuencia_vs_masa():
     fig, axs = plt.subplots(1, 3, figsize=(18, 6))
     
     for i, amplitude in enumerate(amplitudes):
-        for length in lengths:
+        for length in ['L3', 'L4', 'L5']:
             frecuencias = []
             
             data = load_data(amplitude, length)
